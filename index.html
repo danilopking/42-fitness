@@ -10,7 +10,7 @@
   <style>
     :root{
       --bg:#0f1115; --card:#161922; --muted:#8b93a7; --text:#f5f7fa;
-      --accent:#34d399; --accent-2:#60a5fa; --danger:#ef4444; --ring:#243041; --border:#232838;
+      --accent:#34d399; --accent-2:#60a5fa; --danger:#ef4444; --ring:#243041; --border:#232838; --today:#1b2336;
     }
     *{box-sizing:border-box}
     body{ margin:0; font-family: ui-sans-serif, -apple-system, Segoe UI, Roboto, Inter, Arial;
@@ -37,13 +37,11 @@
     .btn.primary{ background:linear-gradient(180deg, #2b6cb0, #2563eb); border:0 }
     .btn.ghost{ background:transparent; border:1px solid var(--border) }
     .btn:active{ transform: translateY(1px) }
-    .chip{padding:6px 10px; border:1px solid var(--border); border-radius:999px; font-size:12px;}
-    .tag{padding:4px 8px; border:1px solid var(--border); border-radius:8px; font-size:11px; color:#aab4ce}
+    .pill{border-radius:999px; padding:8px 12px; border:1px solid var(--border)}
     .list{display:grid; gap:10px}
     .item{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px; border-radius:12px;
       background:linear-gradient(180deg, #131828, #0f1422); border:1px solid var(--border);
     }
-    input[type="checkbox"]{ width:20px; height:20px; accent-color: var(--accent) }
     .small{font-size:12px} .divider{height:1px; background:var(--border); margin:12px 0}
     .tabs{ position:fixed; bottom:0; left:0; right:0; z-index:20; background:rgba(10,12,20,.7); backdrop-filter: blur(8px);
       border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-around; padding:8px;
@@ -51,15 +49,12 @@
     .tab{ text-align:center; color:#9aa3b8; font-size:12px; padding:6px 10px; border-radius:10px }
     .tab.active{ color:#fff; background:#151a28; border:1px solid var(--border) }
     main{ padding-bottom:70px }
-    .ring-wrap{display:flex; align-items:center; gap:16px} .ring{ width:112px; height:112px; } .ring text{ font-weight:700; font-size:18px; fill:#e2e8f0 }
-    .kpi{display:grid; gap:6px}
-    .search{ display:flex; gap:8px; } .search input{ flex:1; padding:10px 12px; border-radius:12px; border:1px solid var(--border); background:#0d1220; color:#fff; }
-    .pill{border-radius:999px; padding:8px 12px; border:1px solid var(--border)}
-    .filterbar{ display:flex; gap:8px; overflow:auto; padding-bottom:6px } .hidden{ display:none !important } .right{ margin-left:auto }
-    .metric{ display:flex; gap:10px; align-items:baseline } .metric .label{ color:#9aa3b8; font-size:12px } .metric .value{ font-weight:700 }
-    .modal{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.45); z-index:100 }
-    .modal .box{ width:min(720px, 92vw); max-height:86vh; overflow:auto } .center{ text-align:center }
-    @media(min-width:820px){ .grid.cols-2{ grid-template-columns: 1.2fr .8fr } }
+    input[type="checkbox"]{ width:20px; height:20px; accent-color: var(--accent) }
+    .tag{padding:4px 8px; border:1px solid var(--border); border-radius:8px; font-size:11px; color:#aab4ce}
+    .calendar-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px; border-radius:12px; border:1px solid var(--border); }
+    .calendar-row.today{ background: var(--today); }
+    .badge{ font-size:11px; padding:4px 8px; border:1px solid var(--border); border-radius:999px; color:#aab4ce}
+    .status-done{ color:#34d399 } .status-cancel{ color:#ef4444 }
   </style>
 </head>
 <body>
@@ -75,80 +70,65 @@
     </div>
   </header>
 
-  <main id="view-today" class="container">
-    <div class="grid cols-2">
-      <section class="card">
-        <h3>Сегодня</h3>
-        <div class="ring-wrap">
-          <svg viewBox="0 0 120 120" class="ring" aria-label="прогресс">
-            <circle cx="60" cy="60" r="50" stroke="var(--ring)" stroke-width="12" fill="none" />
-            <circle id="ringFill" cx="60" cy="60" r="50" stroke="url(#grad)" stroke-width="12" fill="none"
-                    stroke-linecap="round" transform="rotate(-90 60 60)" stroke-dasharray="0 999"/>
-            <defs><linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="#60a5fa"/><stop offset="100%" stop-color="#34d399"/>
-            </linearGradient></defs>
-            <text id="ringText" x="60" y="64" text-anchor="middle">0%</text>
-          </svg>
-          <div class="kpi">
-            <div class="metric"><div class="label">Упражнений</div><div class="value" id="kpiExercises">0</div></div>
-            <div class="metric"><div class="label">Выполнено</div><div class="value" id="kpiDone">0</div></div>
-            <div class="metric"><div class="label">Заминка</div><div class="value" id="kpiCooldown">вкл</div></div>
-          </div>
-        </div>
-        <div class="divider"></div>
-        <div class="row">
-          <button class="btn primary" id="startBtn">Начать тренировку</button>
-          <button class="btn" id="toggleCooldown">Заминка: вкл</button>
-          <div class="right small muted" id="todayDate"></div>
-        </div>
-      </section>
-
-      <section class="card">
-        <h3>Быстрый журнал</h3>
-        <div class="row">
-          <div class="pill"><span class="muted small">Боль 0–10:</span> <input type="number" id="painInput" min="0" max="10" step="1" style="width:64px; margin-left:6px; background:#0d1220; color:#fff; border:1px solid var(--border); border-radius:10px; padding:8px"/></div>
-          <div class="pill"><span class="muted small">Сгибание (°):</span> <input type="number" id="romInput" min="0" max="160" step="1" style="width:72px; margin-left:6px; background:#0d1220; color:#fff; border:1px solid var(--border); border-radius:10px; padding:8px"/></div>
-          <button class="btn" id="saveQuickLog">Сохранить</button>
-        </div>
-        <div class="footer-note">Записывай ROM и боль после тренировки — график на вкладке «Прогресс».</div>
-      </section>
-    </div>
-
+  <!-- VIEW: CALENDAR -->
+  <main id="view-calendar" class="container">
     <section class="card">
-      <h3>Комплекс на сегодня</h3>
-      <div id="todayList" class="list"></div>
-    </section>
-  </main>
-
-  <main id="view-plan" class="container hidden">
-    <section class="card">
-      <h3>План недели</h3>
-      <div id="planList" class="list"></div>
+      <div class="row" style="justify-content:space-between;">
+        <h3>Календарь недели</h3>
+        <div class="row">
+          <button class="btn" id="prevWeek">← Пред</button>
+          <div class="pill" id="weekLabel">Неделя</div>
+          <button class="btn" id="nextWeek">След →</button>
+        </div>
+      </div>
+      <div class="small muted" id="todayHeader" style="margin:8px 0;">Сегодня: –</div>
+      <div id="calendarList" class="list"></div>
       <div class="divider"></div>
       <div class="row">
-        <button class="btn" id="resetPlan">Сбросить план</button>
-        <button class="btn" id="switchTemplate">Сменить шаблон недели (A/B)</button>
+        <div class="small muted">Подсказка: жми «Открыть» у дня, чтобы увидеть все упражнения и отмечать галочками.</div>
       </div>
-      <div class="footer-note">Шаблон A: 2 бега + 1 поле. Шаблон B: 2 поля + 1 бег. Зал всегда 3 дня.</div>
     </section>
   </main>
 
+  <!-- VIEW: DAY -->
+  <main id="view-day" class="container hidden">
+    <section class="card">
+      <div class="row" style="justify-content:space-between;">
+        <h3 id="dayTitle">День</h3>
+        <div class="row">
+          <button class="btn ghost" id="backToCalendar">Назад</button>
+          <button class="btn" id="cancelBtn">Отменить день</button>
+          <button class="btn" id="uncancelBtn" style="display:none">Вернуть день</button>
+        </div>
+      </div>
+      <div class="small muted" id="daySubtitle"></div>
+      <div class="divider"></div>
+      <div id="dayList" class="list"></div>
+    </section>
+
+    <section class="card">
+      <h3>Журнал / ROM</h3>
+      <div class="row">
+        <div class="pill"><span class="muted small">Боль 0–10:</span> <input type="number" id="painInput" min="0" max="10" step="1" style="width:64px; margin-left:6px; background:#0d1220; color:#fff; border:1px solid var(--border); border-radius:10px; padding:8px"/></div>
+        <div class="pill"><span class="muted small">Сгибание (°):</span> <input type="number" id="romInput" min="0" max="160" step="1" style="width:72px; margin-left:6px; background:#0d1220; color:#fff; border:1px solid var(--border); border-radius:10px; padding:8px"/></div>
+        <button class="btn" id="saveQuickLog">Сохранить</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- VIEW: LIBRARY -->
   <main id="view-library" class="container hidden">
     <section class="card">
       <h3>Библиотека упражнений</h3>
-      <div class="search"><input id="searchInput" placeholder="Поиск по названию или тегу…" /><button class="btn" id="clearSearch">Очистить</button></div>
-      <div class="filterbar" style="margin-top:10px">
-        <div class="chip" data-tag="разминка">разминка</div>
-        <div class="chip" data-tag="зал">зал</div>
-        <div class="chip" data-tag="бег">бег</div>
-        <div class="chip" data-tag="поле">поле</div>
-        <div class="chip" data-tag="ACL-safe">ACL-safe</div>
-        <div class="chip" data-tag="кор">кор</div>
+      <div class="row">
+        <input id="searchInput" placeholder="Поиск по названию или тегу…" style="flex:1; padding:10px 12px; border-radius:12px; border:1px solid var(--border); background:#0d1220; color:#fff" />
+        <button class="btn" id="clearSearch">Очистить</button>
       </div>
       <div id="libraryList" class="list" style="margin-top:12px"></div>
     </section>
   </main>
 
+  <!-- VIEW: PROGRESS -->
   <main id="view-progress" class="container hidden">
     <section class="card">
       <h3>Прогресс колена</h3>
@@ -156,29 +136,27 @@
       <div class="row" style="margin-top:10px">
         <div class="pill">Последний замер: <b id="lastROM">–</b>°</div>
         <div class="pill">Цель: <b>140</b>°</div>
-        <button class="btn" id="addRomBtn">Добавить замер</button>
       </div>
-    </section>
-    <section class="card">
+      <div class="divider"></div>
       <h3>Журнал</h3>
       <div id="logList" class="list"></div>
     </section>
   </main>
 
+  <!-- VIEW: SETTINGS -->
   <main id="view-settings" class="container hidden">
     <section class="card">
       <h3>Настройки</h3>
       <div class="list">
         <div class="item"><div>Язык</div><div class="muted">Русский</div></div>
         <div class="item"><div>Тема</div><div class="muted">Тёмная</div></div>
-        <div class="item"><div>О приложении</div><div class="muted">42 Fitness — зал/бег/поле, пошаговый режим, ROM-график</div></div>
+        <div class="item"><div>О приложении</div><div class="muted">42 Fitness — календарь, чеклисты, ROM-график</div></div>
       </div>
     </section>
   </main>
 
-  <nav class="tabs" role="tablist" aria-label="Навигация по разделам">
-    <button class="tab active" data-view="today">Сегодня</button>
-    <button class="tab" data-view="plan">План</button>
+  <nav class="tabs" role="tablist" aria-label="Навигация">
+    <button class="tab active" data-view="calendar">Календарь</button>
     <button class="tab" data-view="library">Библиотека</button>
     <button class="tab" data-view="progress">Прогресс</button>
     <button class="tab" data-view="settings">Настройки</button>
@@ -191,8 +169,8 @@
   </script>
 
   <script>
+    /************ DATA ************/
     const LS = { get:k=>JSON.parse(localStorage.getItem(k) || "null"), set:(k,v)=>localStorage.setItem(k, JSON.stringify(v)) };
-
     const EX = [
       { id:"patella-mob", name:"Двигать патель", tags:["разминка","ACL-safe","колено"], howTo:"Мягкая мобилизация надколенника 1–2 мин", youtube:null },
       { id:"bench-knee-flex", name:"Сгибание колена на скамейке", tags:["разминка","ACL-safe","колено"], howTo:"Мягко увеличиваем ROM 2–3 мин", youtube:null },
@@ -220,34 +198,25 @@
       { id:"calf-stretch", name:"Calf Stretch", tags:["заминка","мобилити"], howTo:"2×30 сек", youtube:"https://www.youtube.com/watch?v=mafo7o7OnFo" },
     ];
 
+    // Week templates A/B (Mon..Sun as 1..0)
     const WEEK_A = {
       1:{ title:"Зал — сила+баланс", type:"gym", warmup:["patella-mob","bench-knee-flex","kneeling-sit","bike","heel-slides"],
           list:["squat-weight","split-squat-bul","bridges","hip-thrust","rdl","leg-press","calf-raises","side-plank","dead-bug","face-pull","step-ups","lat-band-walk","hop-balance","ladder","skater"],
-          cooldown:["dyn-ham","calf-stretch"]
-      },
+          cooldown:["dyn-ham","calf-stretch"] },
       2:{ title:"Бег/кардио + ROM", type:"run", warmup:["patella-mob","bench-knee-flex","kneeling-sit","bike","heel-slides"],
-          list:["step-ups","hop-balance","dyn-ham","ladder"],
-          cooldown:["calf-stretch"]
-      },
+          list:["step-ups","hop-balance","dyn-ham","ladder"], cooldown:["calf-stretch"] },
       3:{ title:"Зал — сила+баланс", type:"gym", warmup:["patella-mob","bench-knee-flex","kneeling-sit","bike","heel-slides"],
           list:["squat-weight","split-squat-bul","bridges","hip-thrust","rdl","leg-press","calf-raises","side-plank","dead-bug","face-pull","step-ups","lat-band-walk","hop-balance","ladder","skater"],
-          cooldown:["dyn-ham","calf-stretch"]
-      },
+          cooldown:["dyn-ham","calf-stretch"] },
       4:{ title:"Бег/кардио + ROM", type:"run", warmup:["patella-mob","bench-knee-flex","kneeling-sit","bike","heel-slides"],
-          list:["step-ups","hop-balance","dyn-ham","ladder"],
-          cooldown:["calf-stretch"]
-      },
+          list:["step-ups","hop-balance","dyn-ham","ladder"], cooldown:["calf-stretch"] },
       5:{ title:"Зал — сила+баланс", type:"gym", warmup:["patella-mob","bench-knee-flex","kneeling-sit","bike","heel-slides"],
           list:["squat-weight","split-squat-bul","bridges","hip-thrust","rdl","leg-press","calf-raises","side-plank","dead-bug","face-pull","step-ups","lat-band-walk","hop-balance","ladder","skater"],
-          cooldown:["dyn-ham","calf-stretch"]
-      },
+          cooldown:["dyn-ham","calf-stretch"] },
       6:{ title:"Поле — динамика/футбол", type:"field", warmup:["patella-mob","bench-knee-flex","kneeling-sit","heel-slides"],
-          list:["shuttle","cone","skater","hop-balance","ladder"],
-          cooldown:["dyn-ham","calf-stretch"]
-      },
+          list:["shuttle","cone","skater","hop-balance","ladder"], cooldown:["dyn-ham","calf-stretch"] },
       0:{ title:"Отдых/мобилити", type:"rest", warmup:["patella-mob","bench-knee-flex","kneeling-sit"], list:[], cooldown:[] }
     };
-
     const WEEK_B = {
       1: WEEK_A[1],
       2:{ title:"Поле — динамика/футбол", type:"field", warmup:["patella-mob","bench-knee-flex","kneeling-sit","heel-slides"],
@@ -263,160 +232,214 @@
 
     const db = {
       exercises: LS.get("exercises") ?? EX,
-      planA: LS.get("planA") ?? WEEK_A,
-      planB: LS.get("planB") ?? WEEK_B,
-      planToggle: LS.get("planToggle") ?? "A",
       logs: LS.get("logs") ?? [],
-      today: LS.get("today") ?? {date:null, completed:[], cooldown:true}
+      canceled: LS.get("canceled") ?? [], // ISO dates
     };
-    persist();
-    function persist(){ LS.set("exercises", db.exercises); LS.set("planA", db.planA); LS.set("planB", db.planB);
-      LS.set("planToggle", db.planToggle); LS.set("logs", db.logs); LS.set("today", db.today); }
-    function activePlan(){ return db.planToggle==="A" ? db.planA : db.planB }
+    function persist(){ LS.set("exercises", db.exercises); LS.set("logs", db.logs); LS.set("canceled", db.canceled); }
 
+    /************ HELPERS ************/
+    const DOW_LABEL = ["Вс","Пн","Вт","Ср","Чт","Пт","Сб"];
+    const TYPE_LABEL = { gym:"Зал", run:"Бег", field:"Поле", rest:"Отдых" };
+    function ISO(d){ return d.toISOString().slice(0,10); }
+    function startOfWeek(date){ // Monday-start
+      const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+      const day = (d.getDay()+6)%7; // 0..6 with Monday=0
+      d.setUTCDate(d.getUTCDate()-day);
+      return d;
+    }
+    function addDays(d, n){ const c=new Date(d); c.setUTCDate(c.getUTCDate()+n); return c; }
+    function isoWeekNumber(date){
+      const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+      const dayNum = d.getUTCDay() || 7;
+      d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+      const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+      return Math.ceil((((d - yearStart) / 86400000) + 1)/7);
+    }
+    function weekTemplateByDate(date){
+      const wk = isoWeekNumber(date);
+      return (wk % 2 === 1) ? WEEK_A : WEEK_B; // odd -> A, even -> B
+    }
+    function exById(id){ return db.exercises.find(e=>e.id===id) }
+
+    /************ NAV ************/
     const views = {
-      today: document.getElementById("view-today"),
-      plan: document.getElementById("view-plan"),
+      calendar: document.getElementById("view-calendar"),
+      day: document.getElementById("view-day"),
       library: document.getElementById("view-library"),
       progress: document.getElementById("view-progress"),
       settings: document.getElementById("view-settings")
     };
     const tabs = document.querySelectorAll(".tab");
-    tabs.forEach(t => t.addEventListener("click", () => switchView(t.dataset.view)));
-    function switchView(view){
-      Object.values(views).forEach(v=>v.classList.add("hidden"));
-      views[view].classList.remove("hidden");
-      tabs.forEach(t => t.classList.toggle("active", t.dataset.view===view));
-      if(view==="plan") renderPlan();
-      if(view==="library") renderLibrary();
-      if(view==="progress") { drawChart(); renderLogList(); }
-      if(view==="today") renderToday();
-      location.hash = `#${view}`;
-    }
-    if(location.hash) switchView(location.hash.slice(1)); else switchView("today");
-
-    function DOW(){ return (new Date()).getDay(); }
-    function ISO(d=new Date()){ return d.toISOString().slice(0,10); }
-    function exById(id){ return db.exercises.find(x=>x.id===id) }
-    function isDone(id){ return db.today.completed.includes(id) }
-    function toggleDone(id){ const i=db.today.completed.indexOf(id); if(i>=0) db.today.completed.splice(i,1); else db.today.completed.push(id); persist(); renderToday(); }
-
-    function todayModel(){
-      const todayISO = ISO();
-      if(db.today.date !== todayISO){ db.today = {date:todayISO, completed:[], cooldown:true}; persist(); }
-      const plan = activePlan()[DOW()];
-      return { date: todayISO, blockTitle: plan.title, warmup: plan.warmup.map(exById), list: plan.list.map(exById), cooldown: db.today.cooldown ? plan.cooldown.map(exById) : [] };
+    tabs.forEach(t=> t.addEventListener("click", ()=>switchView(t.dataset.view)));
+    function switchView(v){
+      Object.values(views).forEach(x=>x.classList.add("hidden"));
+      views[v].classList.remove("hidden");
+      tabs.forEach(t=>t.classList.toggle("active", t.dataset.view===v));
+      if(v==="calendar") renderCalendar();
+      if(v==="library") renderLibrary();
+      if(v==="progress") { drawChart(); renderLogList(); }
     }
 
-    function renderToday(){
-      const m = todayModel();
-      document.getElementById("todayDate").textContent = new Date().toLocaleDateString("ru-RU", {weekday:"short", day:"2-digit", month:"2-digit"});
-      const sections = [ { label:"Разминка", arr:m.warmup }, { label:m.blockTitle, arr:m.list }, { label:"Заминка", arr:m.cooldown } ];
-      const total = sections.reduce((s,x)=>s+x.arr.length,0); const done = db.today.completed.length; const pct = total ? Math.round(done/total*100) : 0;
-      const ring = document.getElementById("ringFill"); const dash = 2*Math.PI*50; ring.setAttribute("stroke-dasharray", `${dash*pct/100} ${dash}`);
-      document.getElementById("ringText").textContent = pct + "%"; document.getElementById("kpiExercises").textContent = total; document.getElementById("kpiDone").textContent = done;
-      document.getElementById("kpiCooldown").textContent = db.today.cooldown ? "вкл" : "выкл"; document.getElementById("toggleCooldown").textContent = "Заминка: " + (db.today.cooldown ? "вкл" : "выкл");
+    /************ CALENDAR ************/
+    let weekOffset = 0; // 0= this week, -1 prev, +1 next
+    document.getElementById("prevWeek").addEventListener("click", ()=>{ weekOffset--; renderCalendar(); });
+    document.getElementById("nextWeek").addEventListener("click", ()=>{ weekOffset++; renderCalendar(); });
 
-      const wrap = document.getElementById("todayList"); wrap.innerHTML="";
-      for(const s of sections){
-        if(!s.arr.length) continue;
-        const head = document.createElement("div"); head.className="muted"; head.style.margin="6px 4px"; head.textContent = s.label; wrap.appendChild(head);
-        for(const ex of s.arr){
-          const item = document.createElement("div"); item.className="item";
-          item.innerHTML = `<div style="display:flex; gap:10px; align-items:center;">
-              <input type="checkbox" ${isDone(ex.id)?"checked":""} />
-              <div>
-                <div style="font-weight:700">${ex.name}</div>
-                <div class="small muted">${ex.howTo}</div>
-                <div class="row small">
-                  ${ex.tags.slice(0,3).map(t=>`<span class="tag">${t}</span>`).join(" ")}
-                  ${ex.youtube ? `<a class="btn small" href="${ex.youtube}" target="_blank" rel="noopener">Видео ▶</a>` : `<span class="small muted">без видео</span>`}
-                </div>
-              </div>
-            </div>`;
-          const cb = item.querySelector("input[type=checkbox]"); cb.addEventListener("change", ()=>toggleDone(ex.id));
-          wrap.appendChild(item);
-        }
-        wrap.appendChild(document.createElement("div")).className="divider";
+    function renderCalendar(){
+      const today = new Date();
+      const base = startOfWeek(new Date(today.getFullYear(), today.getMonth(), today.getDate()));
+      const showing = addDays(base, weekOffset*7);
+      const tpl = weekTemplateByDate(showing);
+
+      const weekNum = isoWeekNumber(showing);
+      document.getElementById("weekLabel").textContent = `Неделя ${weekNum}`;
+
+      // Today header
+      const tTpl = weekTemplateByDate(today);
+      const tDow = today.getDay();
+      const tPlan = tTpl[tDow];
+      document.getElementById("todayHeader").textContent =
+        `Сегодня: ${DOW_LABEL[tDow]} — ${TYPE_LABEL[tPlan.type]} (${tPlan.title})`;
+
+      const list = document.getElementById("calendarList"); list.innerHTML="";
+      for(let i=0;i<7;i++){
+        const date = addDays(showing, i);
+        const iso = ISO(date);
+        const dow = date.getDay();
+        const p = tpl[dow];
+        const canceled = db.canceled.includes(iso);
+        const dayLogs = db.logs.find(l=>l.date===iso);
+        const doneCount = dayLogs?.completedIds?.length || 0;
+        const total = (p.warmup.length + p.list.length + p.cooldown.length);
+        const done = total>0 && doneCount>=total;
+
+        const row = document.createElement("div");
+        row.className = "calendar-row" + (weekOffset===0 && iso===ISO(today) ? " today": "");
+        row.innerHTML = `<div>
+          <div style="font-weight:700">${DOW_LABEL[dow]} — ${TYPE_LABEL[p.type]}</div>
+          <div class="small muted">${iso} · ${p.title}</div>
+        </div>
+        <div class="row">
+          ${canceled ? `<span class="badge status-cancel">Отменено</span>` : done ? `<span class="badge status-done">Выполнено</span>` : `<span class="badge">Запланировано</span>`}
+          <button class="btn small open">Открыть</button>
+        </div>`;
+        row.querySelector(".open").addEventListener("click", ()=> openDay(iso));
+        list.appendChild(row);
       }
     }
-    document.getElementById("toggleCooldown").addEventListener("click", ()=>{ db.today.cooldown = !db.today.cooldown; persist(); renderToday(); });
 
-    document.getElementById("saveQuickLog").addEventListener("click", ()=>{
-      const rom = parseInt(document.getElementById("romInput").value || ""); 
-      const pain = parseInt(document.getElementById("painInput").value || ""); 
-      const entry = { date:ISO(), pain: isNaN(pain)? null : pain, rom: isNaN(rom)? null : rom, completedIds:[...db.today.completed] };
-      const idx = db.logs.findIndex(l=>l.date===entry.date);
-      if(idx>=0) db.logs[idx]= {...db.logs[idx], ...entry }; else db.logs.push(entry);
-      persist(); alert("Сохранено ✅"); document.getElementById("romInput").value=""; document.getElementById("painInput").value=""; drawChart(); renderLogList();
+    /************ DAY VIEW ************/
+    let currentDayISO = null;
+    function openDay(iso){
+      currentDayISO = iso;
+      switchView("day");
+      const d = new Date(iso + "T00:00:00");
+      const tpl = weekTemplateByDate(d);
+      const p = tpl[d.getDay()];
+
+      document.getElementById("dayTitle").textContent = `${iso} — ${TYPE_LABEL[p.type]}`;
+      document.getElementById("daySubtitle").textContent = p.title;
+
+      const isToday = (iso === ISO(new Date()));
+      document.getElementById("cancelBtn").style.display = isToday && !db.canceled.includes(iso) ? "inline-block" : "none";
+      document.getElementById("uncancelBtn").style.display = isToday && db.canceled.includes(iso) ? "inline-block" : "none";
+
+      const list = document.getElementById("dayList"); list.innerHTML="";
+      const seq = [...p.warmup.map(id=>({id, block:"Разминка"})),
+                   ...p.list.map(id=>({id, block:"Основные"})),
+                   ...p.cooldown.map(id=>({id, block:"Заминка"}))];
+
+      const log = db.logs.find(l=>l.date===iso) || { date: iso, pain:null, rom:null, completedIds: [] };
+      if(!db.logs.find(l=>l.date===iso)){ db.logs.push(log); persist(); }
+
+      let lastBlock = null;
+      seq.forEach((row, idx)=>{
+        const ex = exById(row.id);
+        if(!ex) return;
+        if(row.block !== lastBlock){
+          const h = document.createElement("div"); h.className="muted"; h.style.margin="6px 4px"; h.textContent = row.block;
+          list.appendChild(h); lastBlock = row.block;
+        }
+        const item = document.createElement("div"); item.className="item";
+        const checked = log.completedIds.includes(row.id);
+        item.innerHTML = `<div style="display:flex; gap:10px; align-items:center;">
+            <input type="checkbox" ${checked?"checked":""} />
+            <div>
+              <div style="font-weight:700">${ex.name}</div>
+              <div class="small muted">${ex.howTo}</div>
+              <div class="row small">
+                ${ex.tags.slice(0,3).map(t=>`<span class="tag">${t}</span>`).join(" ")}
+                ${ex.youtube ? `<a class="btn small" href="${ex.youtube}" target="_blank" rel="noopener">Видео ▶</a>` : `<span class="small muted">без видео</span>`}
+              </div>
+            </div>
+          </div>`;
+        const cb = item.querySelector("input[type=checkbox]");
+        cb.addEventListener("change", ()=>{
+          const i = log.completedIds.indexOf(row.id);
+          if(cb.checked && i<0) log.completedIds.push(row.id);
+          if(!cb.checked && i>=0) log.completedIds.splice(i,1);
+          persist(); // update log
+        });
+        list.appendChild(item);
+      });
+
+      // Quick log buttons attach to this day
+      document.getElementById("saveQuickLog").onclick = ()=>{
+        const rom = parseInt(document.getElementById("romInput").value || ""); 
+        const pain = parseInt(document.getElementById("painInput").value || ""); 
+        log.rom = isNaN(rom) ? log.rom : rom;
+        log.pain = isNaN(pain) ? log.pain : pain;
+        persist();
+        alert("Сохранено ✅");
+        document.getElementById("romInput").value=""; 
+        document.getElementById("painInput").value="";
+      };
+    }
+    document.getElementById("backToCalendar").addEventListener("click", ()=>{ switchView("calendar"); renderCalendar(); });
+
+    // Cancel / Uncancel today
+    document.getElementById("cancelBtn").addEventListener("click", ()=>{
+      if(!currentDayISO) return;
+      if(confirm("Отменить сегодняшний день?")){
+        if(!db.canceled.includes(currentDayISO)) db.canceled.push(currentDayISO);
+        persist(); openDay(currentDayISO);
+      }
+    });
+    document.getElementById("uncancelBtn").addEventListener("click", ()=>{
+      if(!currentDayISO) return;
+      const idx = db.canceled.indexOf(currentDayISO);
+      if(idx>=0) db.canceled.splice(idx,1);
+      persist(); openDay(currentDayISO);
     });
 
-    function lbl(i){ return ["Вс","Пн","Вт","Ср","Чт","Пт","Сб"][i] }
-    function renderPlan(){
-      const plan = activePlan();
-      const wrap = document.getElementById("planList"); wrap.innerHTML="";
-      for(const i of [1,2,3,4,5,6,0]){
-        const p = plan[i]; const row = document.createElement("div"); row.className="item";
-        row.innerHTML = `<div><div style="font-weight:700">${lbl(i)} — ${p.title}</div>
-          <div class="small muted">Упр.: ${p.list.length} · Разминка: ${p.warmup.length} · Заминка: ${p.cooldown.length}</div></div>
-          <div class="row"><button class="btn small open">Открыть</button></div>`;
-        row.querySelector(".open").addEventListener("click", ()=>openDayEditor(i));
-        wrap.appendChild(row);
-      }
-    }
-    function openDayEditor(i){
-      const p = activePlan()[i];
-      const d = document.createElement("div"); d.className="modal";
-      d.innerHTML = `<div class="card box">
-        <div class="row" style="justify-content:space-between;"><h3 style="margin:0">${lbl(i)} — ${p.title}</h3><button class="btn ghost closeM">Закрыть</button></div>
-        <div class="divider"></div>
-        ${["Разминка","Основные","Заминка"].map((label,idx)=>{
-          const arr = idx===0 ? p.warmup : idx===1 ? p.list : p.cooldown;
-          return `<div class="muted" style="margin:6px 4px">${label}</div>
-            <div class="list">${arr.map(id=>{
-              const ex = db.exercises.find(e=>e.id===id);
-              return `<div class="item"><div><div style="font-weight:700">${ex.name}</div><div class="small muted">${ex.howTo}</div></div>
-                <button class="btn small" data-del="${id}" data-idx="${idx}">Убрать</button></div>`
-            }).join("")}</div>`
-        }).join("")}
-        <div class="divider"></div>
-        <div class="row">
-          <input id="addById" placeholder="Добавить упражнение по ID (например, dead-bug)" style="flex:1; padding:10px 12px; border-radius:12px; border:1px solid var(--border); background:#0d1220; color:#fff"/>
-          <select id="targetArea" style="background:#0d1220; color:#fff; border:1px solid var(--border); border-radius:10px; padding:8px">
-            <option value="1">Основные</option><option value="0">Разминка</option><option value="2">Заминка</option>
-          </select>
-          <button class="btn" id="addBtn">Добавить</button>
-        </div>
-      </div>`;
-      document.body.appendChild(d);
-      d.querySelector(".closeM").addEventListener("click", ()=>d.remove());
-      d.querySelectorAll("[data-del]").forEach(b=> b.addEventListener("click", ()=>{
-        const arr = parseInt(b.dataset.idx)===0 ? p.warmup : parseInt(b.dataset.idx)===1 ? p.list : p.cooldown;
-        const idx = arr.indexOf(b.dataset.del); if(idx>=0) arr.splice(idx,1); persist(); d.remove(); renderPlan();
-      }));
-      d.querySelector("#addBtn").addEventListener("click", ()=>{
-        const id = d.querySelector("#addById").value.trim(); const tgt = parseInt(d.querySelector("#targetArea").value);
-        if(!db.exercises.find(e=>e.id===id)){ alert("Нет упражнения с таким ID"); return; }
-        const arr = tgt===0 ? p.warmup : tgt===1 ? p.list : p.cooldown; arr.push(id); persist(); d.remove(); renderPlan();
+    /************ LIBRARY ************/
+    function renderLibrary(){
+      const el = document.getElementById("libraryList");
+      const q = (document.getElementById("searchInput").value||"").toLowerCase();
+      el.innerHTML="";
+      db.exercises.filter(ex=> ex.name.toLowerCase().includes(q) || ex.tags.some(t=>t.toLowerCase().includes(q))).forEach(ex=>{
+        const item = document.createElement("div"); item.className="item";
+        item.innerHTML = `<div>
+            <div style="font-weight:800">${ex.name}</div>
+            <div class="small muted">ID: ${ex.id}</div>
+            <div class="small muted" style="margin-top:4px">${ex.howTo}</div>
+            <div class="row small" style="margin-top:6px">${ex.tags.map(t=>`<span class="tag">${t}</span>`).join(" ")}</div>
+          </div>
+          <div class="row">${ex.youtube ? `<a class="btn small" href="${ex.youtube}" target="_blank" rel="noopener">Видео ▶</a>` : `<span class="small muted">без видео</span>`}</div>`;
+        el.appendChild(item);
       });
     }
-    document.getElementById("resetPlan").addEventListener("click", ()=>{
-      if(confirm("Вернуть исходные шаблоны A/B?")){
-        LS.set("planA", WEEK_A); LS.set("planB", WEEK_B);
-        db.planA=WEEK_A; db.planB=WEEK_B; persist(); renderPlan();
-      }
-    });
-    document.getElementById("switchTemplate").addEventListener("click", ()=>{
-      db.planToggle = db.planToggle==="A" ? "B":"A"; persist(); renderPlan(); renderToday(); alert("Текущий шаблон: Неделя "+db.planToggle);
-    });
+    document.getElementById("searchInput").addEventListener("input", renderLibrary);
+    document.getElementById("clearSearch").addEventListener("click", ()=>{ document.getElementById("searchInput").value=""; renderLibrary(); });
 
+    /************ PROGRESS ************/
     function drawChart(){
       const cv = document.getElementById("romChart"); const ctx = cv.getContext("2d");
       ctx.clearRect(0,0,cv.width,cv.height);
       const P = { left:50, right:20, top:20, bottom:40 }; const W = cv.width - P.left - P.right; const H = cv.height - P.top - P.bottom;
       ctx.strokeStyle = "#2a3348"; ctx.strokeRect(P.left, P.top, W, H);
       for(let i=0;i<=5;i++){ const y=P.top+(H/5)*i; ctx.beginPath(); ctx.moveTo(P.left,y); ctx.lineTo(P.left+W,y); ctx.strokeStyle="#1f2a40"; ctx.stroke(); }
-      const data = [...db.logs].filter(l=>typeof l.rom==="number").sort((a,b)=>a.date.localeCompare(b.date));
+      const data = [...(db.logs||[])].filter(l=>typeof l.rom==="number").sort((a,b)=>a.date.localeCompare(b.date));
       const roms = data.map(d=>d.rom); const dates = data.map(d=>d.date);
       document.getElementById("lastROM").textContent = roms.length ? roms[roms.length-1] : "–"; if(!data.length) return;
       const minROM = Math.min(90, Math.min(...roms)); const maxROM = Math.max(140, Math.max(...roms));
@@ -429,83 +452,33 @@
     }
     function renderLogList(){
       const el = document.getElementById("logList"); el.innerHTML="";
-      const data = [...db.logs].sort((a,b)=>b.date.localeCompare(a.date));
+      const data = [...(db.logs||[])].sort((a,b)=>b.date.localeCompare(a.date));
       data.forEach(row=>{
         const it = document.createElement("div"); it.className="item";
         it.innerHTML = `<div><div style="font-weight:700">${row.date}</div>
-          <div class="small muted">ROM: ${row.rom ?? "–"}° · Боль: ${row.pain ?? "–"} · Выполнено: ${row.completedIds?.length ?? 0}</div></div>
-          <button class="btn small danger" data-date="${row.date}">Удалить</button>`;
-        it.querySelector("button").addEventListener("click", ()=>{
-          const idx = db.logs.findIndex(l=>l.date===row.date);
-          if(idx>=0){ db.logs.splice(idx,1); persist(); drawChart(); renderLogList(); }
-        });
+          <div class="small muted">ROM: ${row.rom ?? "–"}° · Боль: ${row.pain ?? "–"} · Выполнено: ${row.completedIds?.length ?? 0}</div></div>`;
         el.appendChild(it);
       });
     }
-    document.getElementById("addRomBtn").addEventListener("click", ()=>{
-      const rom = parseInt(prompt("Угол сгибания (в градусах):")); if(isNaN(rom)) return;
-      const entry = { date: ISO(), pain: null, rom, completedIds: [] };
-      const idx = db.logs.findIndex(l=>l.date===entry.date); if(idx>=0) db.logs[idx] = {...db.logs[idx], ...entry}; else db.logs.push(entry);
-      persist(); drawChart(); renderLogList();
+
+    /************ IMPORT/EXPORT ************/
+    document.getElementById("exportBtn").addEventListener("click", ()=>{
+      const blob = new Blob([JSON.stringify(db, null, 2)], {type:"application/json"});
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `42-fitness-data-${ISO(new Date())}.json`; a.click(); URL.revokeObjectURL(a.href);
+    });
+    document.getElementById("importBtn").addEventListener("click", ()=> document.getElementById("importFile").click());
+    document.getElementById("importFile").addEventListener("change", async (e)=>{
+      const file = e.target.files[0]; if(!file) return;
+      try{ const text = await file.text(); const obj = JSON.parse(text);
+        if(obj.exercises && obj.logs && obj.canceled){
+          db.exercises = obj.exercises; db.logs = obj.logs; db.canceled = obj.canceled; persist();
+          alert("Импортировано ✅"); renderCalendar(); drawChart(); renderLogList();
+        } else { alert("Файл не похож на экспорт 42 Fitness v3")}
+      }catch(err){ alert("Ошибка импорта: " + err.message); } finally { e.target.value = "" }
     });
 
-    // Step-by-step
-    function openStepByStep(){
-      const m = todayModel(); const all = [...m.warmup, ...m.list, ...m.cooldown];
-      if(!all.length){ alert("На сегодня нет упражнений"); return; }
-      let idx = 0; const modal = document.createElement("div"); modal.className="modal";
-      function render(){
-        const ex = all[idx];
-        modal.innerHTML = `<div class="card box">
-          <div class="row" style="justify-content:space-between;">
-            <h3 style="margin:0">${m.blockTitle}</h3><button class="btn ghost closeM">Закрыть</button></div>
-          <div class="divider"></div>
-          <div class="center" style="margin-bottom:10px">
-            <div class="muted small">Шаг ${idx+1} из ${all.length}</div>
-            <div style="font-size:22px; font-weight:800; margin-top:6px">${ex.name}</div>
-            <div class="small muted" style="margin-top:6px">${ex.howTo}</div>
-            <div class="row center" style="justify-content:center; margin-top:10px">
-              ${ex.youtube ? `<a class="btn" href="${ex.youtube}" target="_blank" rel="noopener">Видео ▶</a>` : `<span class="small muted">без видео</span>`}
-              <button class="btn ghost" id="timerBtn">Старт/Стоп таймер</button>
-            </div>
-            <div class="muted small" id="timerDisp" style="margin-top:6px">00:00</div>
-          </div>
-          <div class="divider"></div>
-          <div class="row" style="justify-content:space-between">
-            <button class="btn" id="prevBtn" ${idx===0?"disabled":""}>Назад</button>
-            <div class="right">
-              <label class="small" style="margin-right:8px"><input type="checkbox" id="markDone" ${isDone(ex.id)?"checked":""}/> выполнено</label>
-              <button class="btn primary" id="nextBtn">${idx===all.length-1?"Завершить":"Дальше"}</button>
-            </div>
-          </div>
-        </div>`;
-        let running=false; let int=null;
-        function fmt(s){const m=String(Math.floor(s/60)).padStart(2,"0"); const ss=String(s%60).padStart(2,"0"); return `${m}:${ss}`}
-        modal.querySelector("#timerBtn").onclick = ()=>{
-          if(!running){ running=true; const begin=Date.now(); int=setInterval(()=>{
-            const sec = Math.floor((Date.now()-begin)/1000); modal.querySelector("#timerDisp").textContent = fmt(sec);
-          }, 250); } else { running=false; clearInterval(int); int=null; }
-        };
-        modal.querySelector(".closeM").onclick = ()=>{ if(int) clearInterval(int); modal.remove(); };
-        modal.querySelector("#prevBtn").onclick = ()=>{ if(int) clearInterval(int); idx=Math.max(0, idx-1); render(); };
-        modal.querySelector("#nextBtn").onclick = ()=>{
-          const ck = modal.querySelector("#markDone").checked;
-          if(ck && !isDone(ex.id)) db.today.completed.push(ex.id);
-          if(!ck){ const i=db.today.completed.indexOf(ex.id); if(i>=0) db.today.completed.splice(i,1); }
-          persist();
-          if(int) clearInterval(int);
-          if(idx===all.length-1){ modal.remove(); renderToday(); alert("Тренировка завершена ✅"); } else { idx++; render(); }
-        };
-        modal.querySelector("#markDone").onchange = (e)=>{
-          if(e.target.checked){ if(!isDone(ex.id)) db.today.completed.push(ex.id); } else {
-            const i=db.today.completed.indexOf(ex.id); if(i>=0) db.today.completed.splice(i,1);
-          }
-          persist(); renderToday();
-        };
-      }
-      render(); document.body.appendChild(modal);
-    }
-    document.getElementById("startBtn").addEventListener("click", openStepByStep);
+    // init
+    renderCalendar();
   </script>
 </body>
 </html>
