@@ -1,12 +1,6 @@
 
-const CACHE = "42-fitness-v1";
-const ASSETS = [
-  "./",
-  "./index.html",
-  "./manifest.webmanifest",
-  "./icon-192.png",
-  "./icon-512.png"
-];
+const CACHE = "42-fitness-v2";
+const ASSETS = ["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png"];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
   self.skipWaiting();
@@ -19,9 +13,8 @@ self.addEventListener("activate", e => {
   })());
 });
 self.addEventListener("fetch", e => {
-  const url = new URL(e.request.url);
-  // Network-first for non-GET; cache-first for same-origin GET
   if (e.request.method !== "GET") return;
+  const url = new URL(e.request.url);
   if (url.origin === location.origin) {
     e.respondWith(caches.match(e.request).then(res => res || fetch(e.request)));
   }

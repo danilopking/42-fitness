@@ -1,7 +1,7 @@
 {
   "name": "42 Fitness",
   "short_name": "42 Fitness",
-  "description": "Минималистичный личный тренер для восстановления колена и общего тонуса.",
+  "description": "Минималистичный тренер: зал/бег/поле, пошаговый режим, ROM-график.",
   "lang": "ru",
   "start_url": ".",
   "display": "standalone",
