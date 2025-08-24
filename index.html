@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>42 Fitness</title>
+  <meta name="theme-color" content="#111111" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon-192.png" />
+  <style>
+    :root{
+      --bg:#0f1115;
+      --card:#161922;
+      --muted:#8b93a7;
+      --text:#f5f7fa;
+      --accent:#4ade80;
+      --accent-2:#60a5fa;
+      --danger:#ef4444;
+      --ring:#243041;
+      --border:#232838;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: ui-sans-serif, -apple-system, Segoe UI, Roboto, Inter, Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      background:linear-gradient(180deg,#0d0f14, #0b1020);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      line-height:1.5;
+    }
+    header{
+      position:sticky; top:0; z-index:10;
+      backdrop-filter: blur(8px);
+      background: rgba(13,16,26,.6);
+      border-bottom:1px solid var(--border);
+      padding:12px 16px;
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    .brand{
+      display:flex; align-items:center; gap:10px;
+      font-weight:700; letter-spacing:.4px;
+    }
+    .logo{
+      width:34px; height:34px; border-radius:10px;
+      background:#fff; color:#111;
+      display:grid; place-items:center;
+      font-weight:800; font-size:18px;
+      box-shadow: 0 4px 24px rgba(255,255,255,.08);
+    }
+    .container{padding:16px; max-width:980px; margin:0 auto;}
+    .grid{display:grid; gap:14px}
+    .card{
+      background:linear-gradient(180deg, #151826, #111725);
+      border:1px solid var(--border);
+      border-radius:16px; padding:16px;
+      box-shadow: 0 8px 30px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.03);
+    }
+    .card h3{margin:0 0 10px 0; font-size:18px}
+    .muted{color:var(--muted)}
+    .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    .btn{
+      background:var(--card); color:var(--text);
+      border:1px solid var(--border);
+      padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:600;
+    }
+    .btn.primary{ background:linear-gradient(180deg, #2b6cb0, #2563eb); border:0 }
+    .btn.ghost{ background:transparent; border:1px solid var(--border) }
+    .btn:active{ transform: translateY(1px) }
+    .chip{padding:6px 10px; border:1px solid var(--border); border-radius:999px; font-size:12px;}
+    .tag{padding:4px 8px; border:1px solid var(--border); border-radius:8px; font-size:11px; color:#aab4ce}
+    .list{display:grid; gap:10px}
+    .item{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px; padding:12px; border-radius:12px;
+      background:linear-gradient(180deg, #131828, #0f1422);
+      border:1px solid var(--border);
+    }
+    input[type="checkbox"]{ width:20px; height:20px; accent-color: var(--accent) }
+    .small{font-size:12px}
+    .divider{height:1px; background:var(--border); margin:12px 0}
+    .tabs{
+      position:fixed; bottom:0; left:0; right:0; z-index:20;
+      background:rgba(10,12,20,.7); backdrop-filter: blur(8px);
+      border-top:1px solid var(--border);
+      display:flex; align-items:center; justify-content:space-around;
+      padding:8px;
+    }
+    .tab{ text-align:center; color:#9aa3b8; font-size:12px; padding:6px 10px; border-radius:10px }
+    .tab.active{ color:#fff; background:#151a28; border:1px solid var(--border) }
+    main{ padding-bottom:70px }
+    /* Progress ring */
+    .ring-wrap{display:flex; align-items:center; gap:16px}
+    .ring{ width:112px; height:112px; }
+    .ring text{ font-weight:700; font-size:18px; fill:#e2e8f0 }
+    .kpi{display:grid; gap:6px}
+    .kpi .num{font-size:24px; font-weight:800}
+    .search{ display:flex; gap:8px; }
+    .search input{
+      flex:1; padding:10px 12px; border-radius:12px; border:1px solid var(--border);
+      background:#0d1220; color:#fff;
+    }
+    .pill{border-radius:999px; padding:8px 12px; border:1px solid var(--border)}
+    .filterbar{ display:flex; gap:8px; overflow:auto; padding-bottom:6px }
+    .hidden{ display:none !important }
+    .right{ margin-left:auto }
+    .metric{ display:flex; gap:10px; align-items:baseline }
+    .metric .label{ color:#9aa3b8; font-size:12px }
+    .metric .value{ font-weight:700 }
+    .danger{ color: var(--danger) }
+    .link{ color: var(--accent-2); text-decoration:none }
+    .footer-note{ color:#9aa3b8; font-size:12px; margin-top:8px }
+    @media(min-width:820px){ .grid.cols-2{ grid-template-columns: 1.2fr .8fr } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo">42</div>
+      <div>Fitness</div>
+    </div>
+    <div class="row">
+      <button class="btn ghost small" id="exportBtn">Экспорт</button>
+      <button class="btn ghost small" id="importBtn">Импорт</button>
+      <input type="file" id="importFile" class="hidden" accept=".json" />
+    </div>
+  </header>
+
+  <main id="view-today" class="container">
+    <div class="grid cols-2">
+      <section class="card">
+        <h3>Сегодня</h3>
+        <div class="ring-wrap">
+          <svg viewBox="0 0 120 120" class="ring" aria-label="прогресс">
+            <circle cx="60" cy="60" r="50" stroke="var(--ring)" stroke-width="12" fill="none" />
+            <circle id="ringFill" cx="60" cy="60" r="50" stroke="url(#grad)" stroke-width="12" fill="none"
+                    stroke-linecap="round" transform="rotate(-90 60 60)" stroke-dasharray="0 999"/>
+            <defs>
+              <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#60a5fa"/>
+                <stop offset="100%" stop-color="#34d399"/>
+              </linearGradient>
+            </defs>
+            <text id="ringText" x="60" y="64" text-anchor="middle">0%</text>
+          </svg>
+          <div class="kpi">
+            <div class="metric">
+              <div class="label">Упражнений</div><div class="value" id="kpiExercises">0</div>
+            </div>
+            <div class="metric">
+              <div class="label">Выполнено</div><div class="value" id="kpiDone">0</div>
+            </div>
+            <div class="metric">
+              <div class="label">Заминка</div><div class="value" id="kpiCooldown">вкл</div>
+            </div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="row">
+          <button class="btn primary" id="startBtn">Старт тренировки</button>
+          <button class="btn" id="toggleCooldown">Заминка: вкл</button>
+          <div class="right small muted" id="todayDate"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3>Быстрый журнал</h3>
+        <div class="row">
+          <div class="pill"><span class="muted small">Боль 0–10:</span> <input type="number" id="painInput" min="0" max="10" step="1" style="width:64px; margin-left:6px; background:#0d1220; color:#fff; border:1px solid var(--border); border-radius:10px; padding:8px"/></div>
+          <div class="pill"><span class="muted small">Сгибание (°):</span> <input type="number" id="romInput" min="0" max="160" step="1" style="width:72px; margin-left:6px; background:#0d1220; color:#fff; border:1px solid var(--border); border-radius:10px; padding:8px"/></div>
+          <button class="btn" id="saveQuickLog">Сохранить</button>
+        </div>
+        <div class="footer-note">Вноси замеры после тренировки. Мы построим график на вкладке «Прогресс».</div>
+      </section>
+    </div>
+
+    <section class="card">
+      <h3>Комплекс на сегодня</h3>
+      <div id="todayList" class="list"></div>
+    </section>
+  </main>
+
+  <main id="view-plan" class="container hidden">
+    <section class="card">
+      <h3>План недели</h3>
+      <div id="planList" class="list"></div>
+      <div class="divider"></div>
+      <div class="row">
+        <button class="btn" id="resetPlan">Сбросить на стартовый план</button>
+        <button class="btn" id="editPlan">Редактировать</button>
+      </div>
+      <div class="footer-note">Нажми на день, чтобы просмотреть/изменить упражнения.</div>
+    </section>
+  </main>
+
+  <main id="view-library" class="container hidden">
+    <section class="card">
+      <h3>Библиотека упражнений</h3>
+      <div class="search">
+        <input id="searchInput" placeholder="Поиск по названию или тегу…" />
+        <button class="btn" id="clearSearch">Очистить</button>
+      </div>
+      <div class="filterbar" style="margin-top:10px">
+        <div class="chip" data-tag="колено">колено</div>
+        <div class="chip" data-tag="кор">кор</div>
+        <div class="chip" data-tag="спина">спина</div>
+        <div class="chip" data-tag="разминка">разминка</div>
+        <div class="chip" data-tag="заминка">заминка</div>
+        <div class="chip" data-tag="кардио">кардио</div>
+        <div class="chip" data-tag="ACL-safe">ACL-safe</div>
+      </div>
+      <div id="libraryList" class="list" style="margin-top:12px"></div>
+    </section>
+  </main>
+
+  <main id="view-progress" class="container hidden">
+    <section class="card">
+      <h3>Прогресс колена</h3>
+      <canvas id="romChart" width="900" height="280" style="width:100%; border-radius:12px; background:#0d1220; border:1px solid var(--border)"></canvas>
+      <div class="row" style="margin-top:10px">
+        <div class="pill">Последний замер: <b id="lastROM">–</b>°</div>
+        <div class="pill">Цель: <b>140</b>°</div>
+        <button class="btn" id="addRomBtn">Добавить замер</button>
+      </div>
+    </section>
+    <section class="card">
+      <h3>Журнал</h3>
+      <div id="logList" class="list"></div>
+    </section>
+  </main>
+
+  <main id="view-settings" class="container hidden">
+    <section class="card">
+      <h3>Настройки</h3>
+      <div class="list">
+        <div class="item"><div>Язык</div><div class="muted">Русский</div></div>
+        <div class="item"><div>Тема</div><div class="muted">Тёмная</div></div>
+        <div class="item"><div>О приложении</div><div class="muted">42 Fitness — минималистичный тренер восстановления колена</div></div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabs" role="tablist" aria-label="Навигация по разделам">
+    <button class="tab active" data-view="today">Сегодня</button>
+    <button class="tab" data-view="plan">План</button>
+    <button class="tab" data-view="library">Библиотека</button>
+    <button class="tab" data-view="progress">Прогресс</button>
+    <button class="tab" data-view="settings">Настройки</button>
+  </nav>
+
+  <script>
+    // PWA: register SW
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(console.error);
+      });
+    }
+  </script>
+
+  <script>
+    /**************
+     * DATA LAYER *
+     **************/
+    const LS = {
+      get(k, fallback){ try{ return JSON.parse(localStorage.getItem(k)) ?? fallback }catch(e){ return fallback } },
+      set(k, v){ localStorage.setItem(k, JSON.stringify(v)) }
+    };
+
+    const SEED_EXERCISES = [
+      { id:"heel-slides", name:"Heel Slides", tags:["колено","мобилити","ACL-safe"], howTo:"Скольжение пятки к тазу, без боли. 3×12", youtube:"https://www.youtube.com/results?search_query=heel+slides+acl+rehab" },
+      { id:"quad-sets", name:"Quad Sets (изометрика)", tags:["колено","ACL-safe"], howTo:"Напряжение квадрицепса 5 сек. 3×10", youtube:"https://www.youtube.com/results?search_query=quad+sets+acl+rehab" },
+      { id:"slr", name:"Straight Leg Raise", tags:["колено","ACL-safe"], howTo:"Подъём прямой ноги. 3×10", youtube:"https://www.youtube.com/results?search_query=straight+leg+raise+acl" },
+      { id:"bridges", name:"Hip Bridges", tags:["колено","ягодицы"], howTo:"Ягодичный мост. 3×12", youtube:"https://www.youtube.com/results?search_query=glute+bridge+exercise" },
+      { id:"ham-iso", name:"Hamstring Isometrics", tags:["колено","ACL-safe"], howTo:"Подколенные изометрика 5 сек. 3×10", youtube:"https://www.youtube.com/results?search_query=hamstring+isometrics+acl" },
+      { id:"step-ups-low", name:"Step-ups (низкая платформа)", tags:["колено","ACL-safe","баланс"], howTo:"3×8 на ногу, без боли", youtube:"https://www.youtube.com/results?search_query=step+ups+low+platform" },
+      { id:"leg-press-short", name:"Leg Press (ограниченная амплитуда)", tags:["колено"], howTo:"Лёгкий вес, 3×10", youtube:"https://www.youtube.com/results?search_query=leg+press+partial+range" },
+      { id:"calf-raises", name:"Calf Raises", tags:["икры"], howTo:"Подъёмы на носки 3×15", youtube:"https://www.youtube.com/results?search_query=calf+raises+proper+form" },
+      { id:"dead-bug", name:"Dead Bug", tags:["кор"], howTo:"3×10 на сторону", youtube:"https://www.youtube.com/results?search_query=dead+bug+exercise" },
+      { id:"bird-dog", name:"Bird Dog", tags:["кор","спина"], howTo:"3×10 на сторону", youtube:"https://www.youtube.com/results?search_query=bird+dog+exercise" },
+      { id:"side-plank-knees", name:"Side Plank (с колен)", tags:["кор"], howTo:"3×20–30 сек", youtube:"https://www.youtube.com/results?search_query=side+plank+from+knees" },
+      { id:"plank", name:"Plank", tags:["кор"], howTo:"3×30–45 сек", youtube:"https://www.youtube.com/results?search_query=plank+exercise" },
+      { id:"face-pull-band", name:"Face Pull (резинка)", tags:["спина"], howTo:"3×12", youtube:"https://www.youtube.com/results?search_query=face+pull+band" },
+      { id:"oh-press-seated", name:"Overhead Press (сидя)", tags:["плечи"], howTo:"Гантели, 3×10", youtube:"https://www.youtube.com/results?search_query=seated+overhead+press+dumbbell" },
+      { id:"bike-warm", name:"Велотренажёр (разминка)", tags:["кардио","разминка"], howTo:"8–12 мин, 60–70 rpm", youtube:"https://www.youtube.com/results?search_query=stationary+bike+warm+up" },
+      { id:"walk", name:"Ходьба / Эллипс", tags:["кардио","разминка"], howTo:"5–10 мин", youtube:"https://www.youtube.com/results?search_query=elliptical+warm+up" },
+      { id:"stretch-hams", name:"Растяжка подколенных", tags:["заминка"], howTo:"2×30 сек", youtube:"https://www.youtube.com/results?search_query=hamstring+stretch" },
+      { id:"stretch-calf", name:"Растяжка икр", tags:["заминка"], howTo:"2×30 сек", youtube:"https://www.youtube.com/results?search_query=calf+stretch" }
+    ];
+
+    const SEED_PLAN = {
+      1:{ title:"Колено + мобилити", warmup:["bike-warm"], list:["heel-slides","quad-sets","slr","ham-iso","bridges"], cooldown:["stretch-hams","stretch-calf"] },
+      2:{ title:"Кор + спина", warmup:["walk"], list:["dead-bug","bird-dog","side-plank-knees","face-pull-band"], cooldown:[] },
+      3:{ title:"Кардио лёгкое", warmup:[], list:["walk"], cooldown:[] },
+      4:{ title:"Зал (щадяще)", warmup:["bike-warm"], list:["leg-press-short","step-ups-low","calf-raises"], cooldown:["stretch-hams","stretch-calf"] },
+      5:{ title:"Верх + баланс", warmup:["walk"], list:["plank","oh-press-seated","face-pull-band"], cooldown:[] },
+      6:{ title:"Мобилити + ROM", warmup:["bike-warm"], list:["heel-slides"], cooldown:["stretch-hams","stretch-calf"] },
+      0:{ title:"Отдых", warmup:[], list:[], cooldown:[] }
+    };
+
+    const db = {
+      exercises: LS.get("exercises", SEED_EXERCISES),
+      plan: LS.get("plan", SEED_PLAN),
+      logs: LS.get("logs", []),
+      today: LS.get("today", {date: null, completed: [], cooldown:true})
+    };
+    persist();
+
+    function persist(){
+      LS.set("exercises", db.exercises);
+      LS.set("plan", db.plan);
+      LS.set("logs", db.logs);
+      LS.set("today", db.today);
+    }
+
+    const views = {
+      today: document.getElementById("view-today"),
+      plan: document.getElementById("view-plan"),
+      library: document.getElementById("view-library"),
+      progress: document.getElementById("view-progress"),
+      settings: document.getElementById("view-settings")
+    };
+    const tabs = document.querySelectorAll(".tab");
+    tabs.forEach(t => t.addEventListener("click", () => switchView(t.dataset.view)));
+    function switchView(view){
+      for(const key in views){ views[key].classList.add("hidden") }
+      views[view].classList.remove("hidden");
+      tabs.forEach(t => t.classList.toggle("active", t.dataset.view===view));
+      if(view==="plan") renderPlan();
+      if(view==="library") renderLibrary();
+      if(view==="progress") { drawChart(); renderLogList(); }
+      if(view==="today") renderToday();
+      location.hash = `#${view}`;
+    }
+    if(location.hash) switchView(location.hash.replace("#",""));
+    else switchView("today");
+
+    function getDayKey(d=new Date()){ return d.getDay(); }
+    function getISODate(d=new Date()){ return d.toISOString().slice(0,10); }
+    function getTodayData(){
+      const todayISO = getISODate();
+      if(db.today.date !== todayISO){
+        db.today = { date: todayISO, completed: [], cooldown:true };
+        persist();
+      }
+      const dow = getDayKey();
+      const block = db.plan[dow];
+      return {
+        date: todayISO,
+        blockTitle: block.title,
+        warmup: block.warmup.map(findEx),
+        list: block.list.map(findEx),
+        cooldown: db.today.cooldown ? block.cooldown.map(findEx) : []
+      }
+    }
+    function findEx(id){ return db.exercises.find(e => e.id===id) }
+    function isDone(id){ return db.today.completed.includes(id) }
+    function toggleDone(id){
+      const i = db.today.completed.indexOf(id);
+      if(i>=0) db.today.completed.splice(i,1); else db.today.completed.push(id);
+      persist(); renderToday();
+    }
+    function renderToday(){
+      const model = getTodayData();
+      document.getElementById("todayDate").textContent = new Date().toLocaleDateString("ru-RU", {weekday:"short", day:"2-digit", month:"2-digit"});
+      const list = document.getElementById("todayList");
+      list.innerHTML = "";
+
+      const sections = [
+        { label:"Разминка", arr:model.warmup },
+        { label:model.blockTitle, arr:model.list },
+        { label:"Заминка", arr:model.cooldown }
+      ];
+      let total = sections.reduce((sum,s)=> sum + s.arr.length, 0);
+      let done = db.today.completed.length;
+      const pct = total ? Math.round(done/total*100) : 0;
+      const ring = document.getElementById("ringFill");
+      const dash = 2*Math.PI*50;
+      ring.setAttribute("stroke-dasharray", `${dash*pct/100} ${dash}`);
+      document.getElementById("ringText").textContent = pct + "%";
+      document.getElementById("kpiExercises").textContent = total;
+      document.getElementById("kpiDone").textContent = done;
+      document.getElementById("kpiCooldown").textContent = db.today.cooldown ? "вкл" : "выкл";
+      document.getElementById("toggleCooldown").textContent = "Заминка: " + (db.today.cooldown ? "вкл" : "выкл");
+
+      for(const s of sections){
+        if(!s.arr.length) continue;
+        const head = document.createElement("div");
+        head.className="muted"; head.style.margin="6px 4px"; head.textContent = s.label;
+        list.appendChild(head);
+        for(const ex of s.arr){
+          const item = document.createElement("div");
+          item.className="item";
+          item.innerHTML = `
+            <div style="display:flex; gap:10px; align-items:center;">
+              <input type="checkbox" ${isDone(ex.id)?"checked":""} aria-label="выполнено"/>
+              <div>
+                <div style="font-weight:700">${ex.name}</div>
+                <div class="small muted">${ex.howTo}</div>
+                <div class="row small">
+                  ${ex.tags.slice(0,3).map(t=>`<span class="tag">${t}</span>`).join(" ")}
+                  <a class="link small" href="${ex.youtube}" target="_blank" rel="noopener">Видео ▶</a>
+                </div>
+              </div>
+            </div>
+          `;
+          const cb = item.querySelector("input[type=checkbox]");
+          cb.addEventListener("change", ()=>toggleDone(ex.id));
+          list.appendChild(item);
+        }
+        list.appendChild(document.createElement("div")).className="divider";
+      }
+    }
+    document.getElementById("toggleCooldown").addEventListener("click", ()=>{
+      db.today.cooldown = !db.today.cooldown; persist(); renderToday();
+    });
+
+    document.getElementById("saveQuickLog").addEventListener("click", ()=>{
+      const rom = parseInt(document.getElementById("romInput").value || ""); 
+      const pain = parseInt(document.getElementById("painInput").value || ""); 
+      const entry = { date:getISODate(), pain: isNaN(pain)? null : pain, rom: isNaN(rom)? null : rom, completedIds:[...db.today.completed] };
+      const idx = db.logs.findIndex(l=>l.date===entry.date);
+      if(idx>=0) db.logs[idx]= {...db.logs[idx], ...entry }; else db.logs.push(entry);
+      persist();
+      alert("Сохранено ✅");
+      document.getElementById("romInput").value="";
+      document.getElementById("painInput").value="";
+      drawChart(); renderLogList();
+    });
+
+    function dowLabel(i){ return ["Вс","Пн","Вт","Ср","Чт","Пт","Сб"][i] }
+    function renderPlan(){
+      const wrap = document.getElementById("planList");
+      wrap.innerHTML="";
+      for(let i=1;i<=6;i++){ renderPlanRow(wrap, i) }
+      renderPlanRow(wrap, 0);
+    }
+    function renderPlanRow(wrap, i){
+      const row = document.createElement("div");
+      row.className="item";
+      const p = db.plan[i];
+      row.innerHTML = `
+        <div>
+          <div style="font-weight:700">${dowLabel(i)} — ${p.title}</div>
+          <div class="small muted">Упр.: ${p.list.length} · Разминка: ${p.warmup.length} · Заминка: ${p.cooldown.length}</div>
+        </div>
+        <div class="row">
+          <button class="btn small">Открыть</button>
+        </div>
+      `;
+      row.querySelector(".btn").addEventListener("click", ()=>{
+        const d = document.createElement("div");
+        d.className="card"; d.style.position="fixed"; d.style.left="50%"; d.style.top="50%"; d.style.transform="translate(-50%,-50%)";
+        d.style.width="min(680px, 92vw)"; d.style.maxHeight="80vh"; d.style.overflow="auto"; d.style.zIndex="100"; 
+        d.innerHTML = `
+          <div class="row" style="justify-content:space-between;">
+            <h3 style="margin:0">${dowLabel(i)} — ${p.title}</h3>
+            <button class="btn ghost" id="closeM">Закрыть</button>
+          </div>
+          <div class="divider"></div>
+          ${["Разминка","Основные","Заминка"].map((label,idx)=>{
+            const arr = idx===0 ? p.warmup : idx===1 ? p.list : p.cooldown;
+            return `<div class="muted" style="margin:6px 4px">${label}</div>
+              <div class="list">${arr.map(id=>{
+                const ex = findEx(id);
+                return `<div class="item">
+                  <div>
+                    <div style="font-weight:700">${ex.name}</div>
+                    <div class="small muted">${ex.howTo}</div>
+                    <div class="row small">${ex.tags.slice(0,3).map(t=>`<span class="tag">${t}</span>`).join(" ")}</div>
+                  </div>
+                  <button class="btn small" data-y="${idx}" data-id="${id}">Убрать</button>
+                </div>`
+              }).join("")}</div>`
+          }).join("")}
+          <div class="divider"></div>
+          <div class="row">
+            <input id="addById" placeholder="Добавить упражнение по ID (например, dead-bug)" style="flex:1; padding:10px 12px; border-radius:12px; border:1px solid var(--border); background:#0d1220; color:#fff"/>
+            <select id="targetArea" style="background:#0d1220; color:#fff; border:1px solid var(--border); border-radius:10px; padding:8px">
+              <option value="1">Основные</option>
+              <option value="0">Разминка</option>
+              <option value="2">Заминка</option>
+            </select>
+            <button class="btn" id="addBtn">Добавить</button>
+          </div>
+        `;
+        document.body.appendChild(d);
+        d.querySelector("#closeM").addEventListener("click", ()=>d.remove());
+        d.querySelectorAll("button[data-id]").forEach(b=>{
+          b.addEventListener("click", ()=>{
+            const arr = parseInt(b.dataset.y)===0 ? p.warmup : parseInt(b.dataset.y)===1 ? p.list : p.cooldown;
+            const idx = arr.indexOf(b.dataset.id); if(idx>=0) arr.splice(idx,1);
+            persist(); d.remove(); renderPlan();
+          });
+        });
+        d.querySelector("#addBtn").addEventListener("click", ()=>{
+          const id = d.querySelector("#addById").value.trim();
+          const tgt = parseInt(d.querySelector("#targetArea").value);
+          if(!findEx(id)){ alert("Не найдено упражнение с таким ID"); return; }
+          const arr = tgt===0 ? p.warmup : tgt===1 ? p.list : p.cooldown;
+          arr.push(id); persist(); d.remove(); renderPlan();
+        });
+      });
+      wrap.appendChild(row);
+    }
+    document.getElementById("resetPlan").addEventListener("click", ()=>{
+      if(confirm("Вернуть стартовый план?")){ db.plan = JSON.parse(JSON.stringify(SEED_PLAN)); persist(); renderPlan(); }
+    });
+    document.getElementById("editPlan").addEventListener("click", ()=> alert("Открывай любой день и редактируй состав. В библиотеке — ID упражнений."));
+
+    function renderLibrary(){
+      const el = document.getElementById("libraryList");
+      const q = (document.getElementById("searchInput").value||"").toLowerCase();
+      const activeTag = document.querySelector(".chip.active")?.dataset.tag;
+      el.innerHTML="";
+      db.exercises.filter(ex=>{
+        const inText = ex.name.toLowerCase().includes(q) || ex.tags.some(t=>t.toLowerCase().includes(q));
+        const tagOK = !activeTag || ex.tags.map(t=>t.toLowerCase()).includes(activeTag.toLowerCase());
+        return inText && tagOK;
+      }).forEach(ex=>{
+        const item = document.createElement("div");
+        item.className="item";
+        item.innerHTML = `
+          <div>
+            <div style="font-weight:800">${ex.name}</div>
+            <div class="small muted">ID: ${ex.id}</div>
+            <div class="small muted" style="margin-top:4px">${ex.howTo}</div>
+            <div class="row small" style="margin-top:6px">${ex.tags.map(t=>`<span class="tag">${t}</span>`).join(" ")}</div>
+          </div>
+          <div class="row">
+            <a class="btn small" href="${ex.youtube}" target="_blank" rel="noopener">Видео ▶</a>
+          </div>
+        `;
+        el.appendChild(item);
+      });
+    }
+    document.getElementById("searchInput").addEventListener("input", renderLibrary);
+    document.getElementById("clearSearch").addEventListener("click", ()=>{
+      document.getElementById("searchInput").value=""; document.querySelectorAll(".chip").forEach(c=>c.classList.remove("active")); renderLibrary();
+    });
+    document.querySelectorAll(".chip").forEach(c=> c.addEventListener("click", ()=>{
+      document.querySelectorAll(".chip").forEach(x=>x.classList.remove("active"));
+      c.classList.add("active"); renderLibrary();
+    }));
+
+    function drawChart(){
+      const canvas = document.getElementById("romChart");
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      const P = { left:50, right:20, top:20, bottom:40 };
+      const W = canvas.width - P.left - P.right;
+      const H = canvas.height - P.top - P.bottom;
+      ctx.strokeStyle = "#2a3348"; ctx.lineWidth=1;
+      ctx.strokeRect(P.left, P.top, W, H);
+      for(let i=0;i<=5;i++){
+        const y = P.top + (H/5)*i;
+        ctx.beginPath(); ctx.moveTo(P.left, y); ctx.lineTo(P.left+W, y); ctx.strokeStyle="#1f2a40"; ctx.stroke();
+      }
+      const data = [...db.logs].filter(l=>typeof l.rom==="number").sort((a,b)=>a.date.localeCompare(b.date));
+      const roms = data.map(d=>d.rom);
+      const dates = data.map(d=>d.date);
+      document.getElementById("lastROM").textContent = roms.length ? roms[roms.length-1] : "–";
+      if(!data.length) return;
+      const minROM = Math.min(80, Math.min(...roms));
+      const maxROM = Math.max(140, Math.max(...roms));
+      function x(i){ return P.left + (W/(data.length-1||1))*i }
+      function y(v){ return P.top + H - ( (v - minROM) / (maxROM - minROM || 1) ) * H }
+      ctx.beginPath();
+      data.forEach((d,i)=>{ if(i===0) ctx.moveTo(x(i), y(d.rom)); else ctx.lineTo(x(i), y(d.rom)); });
+      ctx.strokeStyle="#60a5fa"; ctx.lineWidth=2; ctx.stroke();
+      ctx.fillStyle="#34d399";
+      data.forEach((d,i)=>{ ctx.beginPath(); ctx.arc(x(i), y(d.rom), 3, 0, Math.PI*2); ctx.fill(); });
+      ctx.fillStyle="#9aa3b8"; ctx.font="12px system-ui";
+      ctx.fillText(`${minROM}°`, 8, y(minROM)+4);
+      ctx.fillText(`${maxROM}°`, 8, y(maxROM)+4);
+      ctx.fillText(dates[0], x(0)-20, canvas.height-12);
+      ctx.fillText(dates[dates.length-1], x(dates.length-1)-36, canvas.height-12);
+      const ty = y(140);
+      ctx.strokeStyle="#2dd4bf"; ctx.setLineDash([6,6]);
+      ctx.beginPath(); ctx.moveTo(P.left, ty); ctx.lineTo(P.left+W, ty); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle="#a7f3d0"; ctx.fillText("Цель 140°", P.left+8, ty-6);
+    }
+    function renderLogList(){
+      const el = document.getElementById("logList");
+      el.innerHTML = "";
+      const data = [...db.logs].sort((a,b)=>b.date.localeCompare(a.date));
+      data.forEach(row=>{
+        const it = document.createElement("div");
+        it.className="item";
+        it.innerHTML = `
+          <div>
+            <div style="font-weight:700">${row.date}</div>
+            <div class="small muted">ROM: ${row.rom ?? "–"}° · Боль: ${row.pain ?? "–"} · Выполнено: ${row.completedIds?.length ?? 0}</div>
+          </div>
+          <button class="btn small danger" data-date="${row.date}">Удалить</button>
+        `;
+        it.querySelector("button").addEventListener("click", ()=>{
+          const idx = db.logs.findIndex(l=>l.date===row.date);
+          if(idx>=0){ db.logs.splice(idx,1); persist(); drawChart(); renderLogList(); }
+        });
+        el.appendChild(it);
+      });
+    }
+    document.getElementById("addRomBtn").addEventListener("click", ()=>{
+      const rom = prompt("Угол сгибания (в градусах):");
+      const val = parseInt(rom);
+      if(isNaN(val)) return;
+      const entry = { date: getISODate(), pain: null, rom: val, completedIds: [] };
+      const idx = db.logs.findIndex(l=>l.date===entry.date);
+      if(idx>=0) db.logs[idx] = {...db.logs[idx], ...entry}; else db.logs.push(entry);
+      persist(); drawChart(); renderLogList();
+    });
+
+    document.getElementById("exportBtn").addEventListener("click", ()=>{
+      const blob = new Blob([JSON.stringify(db, null, 2)], {type:"application/json"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `42-fitness-data-${getISODate()}.json`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+    document.getElementById("importBtn").addEventListener("click", ()=> document.getElementById("importFile").click());
+    document.getElementById("importFile").addEventListener("change", async (e)=>{
+      const file = e.target.files[0]; if(!file) return;
+      try{
+        const text = await file.text();
+        const obj = JSON.parse(text);
+        if(obj.exercises && obj.plan && obj.logs && obj.today){
+          db.exercises = obj.exercises; db.plan = obj.plan; db.logs = obj.logs; db.today = obj.today; persist();
+          alert("Импортировано ✅");
+          renderToday(); renderPlan(); renderLibrary(); drawChart(); renderLogList();
+        } else { alert("Файл не похож на экспорт 42 Fitness")}
+      }catch(err){
+        alert("Ошибка импорта: " + err.message);
+      } finally { e.target.value = "" }
+    });
+
+    document.getElementById("startBtn").addEventListener("click", ()=>{
+      alert("Пошаговый режим скоро добавим. Пока выполняй по списку и отмечай галочками ✅");
+    });
+
+    // initial
+    renderToday();
+  </script>
+</body>
+</html>
